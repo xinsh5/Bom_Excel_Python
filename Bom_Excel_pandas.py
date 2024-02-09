@@ -15,31 +15,31 @@ def compare_func(item):
     return num
 
 # 存储错误行的序号
-error_row_num = bom_components_begin_row_num
+# error_row_num = bom_components_begin_row_num
 # 位号不允许重复 存储位号
-reference_ls = []
+# reference_ls = []
 # 检查BOM表是否出错，前两列应全为空或全为数字，第三列应为序号，应是字母+数字的形式且不能重复，第四列为Value和第五列PCB Footprint应不为空
-is_valid_reference_pattern = r"^[A-Za-z]+\d+$"
-for row in origin_sheet.iter_rows(min_row=bom_components_begin_row_num, values_only=True):
-    if any(row):  # 判断整行是否存在非空值，为空则跳过
-        if ((type(row[0]) == int and type(row[1]) == int) or (row[0] == None and row[1] == None)) == False:
-            pyautogui.alert(f'第{error_row_num}行={row}的前两列格式错误，非空，也非数字', '提示')
-            sys.exit()
-        if (re.match(is_valid_reference_pattern, row[2]) == False):
-            pyautogui.alert(f'第{error_row_num}行={row}的前三列格式错误，并非位号', '提示')
-            sys.exit()
-        elif (row[2].strip() in reference_ls):
-            pyautogui.alert(f'第{error_row_num}行={row}的位号重复', '提示')
-            sys.exit()
-        else:
-            reference_ls.append(row[2].strip())
-        if row[3] == None:
-            pyautogui.alert(f'第{error_row_num}行={row}的前四列格式错误, Value缺失', '提示')
-            sys.exit()
-        if row[4] == None:
-            pyautogui.alert(f'第{error_row_num}行={row}的前五列格式错误, PCB Footprint缺失', '提示')
-            sys.exit()
-        error_row_num += 1
+# is_valid_reference_pattern = r"^[A-Za-z]+\d+$"
+# for row in origin_sheet.iter_rows(min_row=bom_components_begin_row_num, values_only=True):
+#     if any(row):  # 判断整行是否存在非空值，为空则跳过
+#         if ((type(row[0]) == int and type(row[1]) == int) or (row[0] == None and row[1] == None)) == False:
+#             pyautogui.alert(f'第{error_row_num}行={row}的前两列格式错误，非空，也非数字', '提示')
+#             sys.exit()
+#         if (re.match(is_valid_reference_pattern, row[2]) == False):
+#             pyautogui.alert(f'第{error_row_num}行={row}的前三列格式错误，并非位号', '提示')
+#             sys.exit()
+#         elif (row[2].strip() in reference_ls):
+#             pyautogui.alert(f'第{error_row_num}行={row}的位号重复', '提示')
+#             sys.exit()
+#         else:
+#             reference_ls.append(row[2].strip())
+#         if row[3] == None:
+#             pyautogui.alert(f'第{error_row_num}行={row}的前四列格式错误, Value缺失', '提示')
+#             sys.exit()
+#         if row[4] == None:
+#             pyautogui.alert(f'第{error_row_num}行={row}的前五列格式错误, PCB Footprint缺失', '提示')
+#             sys.exit()
+#         error_row_num += 1
 
 # pyautogui.alert('此BOM表格式正确!', '确认')
 
