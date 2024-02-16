@@ -6,6 +6,7 @@
 import time
 import pandas as pd
 import re
+
 # from pandas import options
 #####################################
 #此文件使用了xlsxwriter 库，这个库不引用pandas是自动引用了，但是安装时没有自动一起安装，需要手动安装
@@ -14,7 +15,9 @@ pd.set_option('display.max_rows', None)   #pandas数据显示所有行，否则�
 pd.set_option('display.max_columns', None) #pandas数据显示所有列
 pd.set_option('display.width', 500) #设置显示宽度，宽度要够大，否则一行显示不全
 
-
+def norm_formatter(series, extra=False):
+    tmp = series.sort_values().astype(object)
+    # ... rest of code ...
 # 自定义排序函数
 def custom_sort_key(item):
     # 使用正则表达式提取列表元素中的数字部分
@@ -63,10 +66,10 @@ first_loop_end_flag = False
 
 # File_Name='./Bom/hongyun导出清单_20240213.xlsx'  #要比较文件名
 # Ref_File_Name = "./Bom/hongyun_V01导出清单_20240126.xls" #被比较的清单
-# File_Name='./Bom/hongyun_V01导出清单_20240126.xls'  #要比较文件名
-# Ref_File_Name = "./Bom/hongyun导出清单_20240213.xlsx" #被比较的清单
-File_Name='./Bom/hongyun导出清单_20240213.xlsx'  #要比较文件名
-Ref_File_Name = "./Bom/hongyun导出清单_20240213_M.xlsx" #被比较的清单
+File_Name='./Bom/hongyun_V01导出清单_20240126.xls'  #要比较文件名
+Ref_File_Name = "./Bom/hongyun导出清单_20240213.xlsx" #被比较的清单
+# File_Name='./Bom/hongyun导出清单_20240213.xlsx'  #要比较文件名
+# Ref_File_Name = "./Bom/hongyun导出清单_20240213_M.xlsx" #被比较的清单
 New_File_Name='./Bom/hongyun_V01清单_compare.xlsx'  #输出的文件名
 
 File_Log_Name = './Bom/BOM_Excel_pd_compare.log'  #记录的日志文件
@@ -102,7 +105,14 @@ print("最大行：",compare_max_rows)
 
 
 diff_df=pd.DataFrame(columns=df.columns) #创建一个空表，记录元器件差异，列索引和读取的Excel一致
-diff_df['diff refenrence']=[] #插入新列，记录不同的元器件位号
+diff_df=diff_df.astype('object')
+###################################################
+###下面新增新列，要赋初值，这里是空字符串，这很关键，否则升级到Pandas2.2版本会报错： 
+# FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. 
+# Value 'R1111' has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
+diff_df['diff refenrence']='' #插入新列，记录不同的元器件位号,并且要赋初值为空字符串，否则新版本dandas会报错
+####################################################################
+
 
 # print("diff_df插入列后初值: ",diff_df)      
 
@@ -169,12 +179,14 @@ for rows in range(0,max_rows,1):  #比较表的行循环
             # print("reference_diff_list:\n",reference_diff_list)            
             reference_num_diff =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
             diff_df.iloc[(diff_df.shape[0]-2),diff_df.shape[1]-2]=reference_num_diff #差异的位号写在倒数第2行
+            
             reference_diff_list = list(set(ref_reference_num_list)-set(reference_num_list)) # 利用集合找出列表ref_reference_num_list中独有的元素
             # reference_diff_list =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
             reference_diff_list= sorted(reference_diff_list,key=custom_sort_key) #排序，默认升序排序
             # print("reference_diff_list:\n",reference_diff_list)            
-            reference_num_diff =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
-            diff_df.iloc[(diff_df.shape[0]-1),diff_df.shape[1]-2]=reference_num_diff #差异的位号写在本行，也就是最后一行                   
+            reference_num_diff =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串            
+            diff_df.iloc[(diff_df.shape[0]-1),diff_df.shape[1]-2]=reference_num_diff #差异的位号写在本行，也就是最后一行 
+                          
             search_result = True
             break
         else:
