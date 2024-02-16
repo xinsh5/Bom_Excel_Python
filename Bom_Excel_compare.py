@@ -5,6 +5,7 @@
 
 import time
 import pandas as pd
+import re
 # from pandas import options
 #####################################
 #此文件使用了xlsxwriter 库，这个库不引用pandas是自动引用了，但是安装时没有自动一起安装，需要手动安装
@@ -13,10 +14,17 @@ pd.set_option('display.max_rows', None)   #pandas数据显示所有行，否则�
 pd.set_option('display.max_columns', None) #pandas数据显示所有列
 pd.set_option('display.width', 500) #设置显示宽度，宽度要够大，否则一行显示不全
 
-def compare_func(item):
-    # 提取每个元素后面的数值部分并转换成int类型
-    num = int(''.join([char for char in item if char.isdigit()]))
-    return num
+
+# 自定义排序函数
+def custom_sort_key(item):
+    # 使用正则表达式提取列表元素中的数字部分
+    num_part = re.findall(r'\d+', item)
+    if num_part:
+        # 如果存在数字部分，则返回数字部分的整数值和原始字符串组成的元组
+        return (int(num_part[0]), item)
+    else:
+        # 如果没有数字部分，则返回一个元组，其中整数部分为无穷大，原始字符串为本身
+        return (float('inf'), item)
 
 current_time_struct = time.localtime()  #获取当前时间
 # 分别获取当前年、月、日、时、分、秒
@@ -55,10 +63,10 @@ first_loop_end_flag = False
 
 # File_Name='./Bom/hongyun导出清单_20240213.xlsx'  #要比较文件名
 # Ref_File_Name = "./Bom/hongyun_V01导出清单_20240126.xls" #被比较的清单
-File_Name='./Bom/hongyun_V01导出清单_20240126.xls'  #要比较文件名
-Ref_File_Name = "./Bom/hongyun导出清单_20240213.xlsx" #被比较的清单
-# File_Name='./Bom/hongyun导出清单_20240213.xlsx'  #要比较文件名
-# Ref_File_Name = "./Bom/hongyun导出清单_20240213_M.xlsx" #被比较的清单
+# File_Name='./Bom/hongyun_V01导出清单_20240126.xls'  #要比较文件名
+# Ref_File_Name = "./Bom/hongyun导出清单_20240213.xlsx" #被比较的清单
+File_Name='./Bom/hongyun导出清单_20240213.xlsx'  #要比较文件名
+Ref_File_Name = "./Bom/hongyun导出清单_20240213_M.xlsx" #被比较的清单
 New_File_Name='./Bom/hongyun_V01清单_compare.xlsx'  #输出的文件名
 
 File_Log_Name = './Bom/BOM_Excel_pd_compare.log'  #记录的日志文件
@@ -90,13 +98,13 @@ if record_file:
 compare_max_columns= max(max_columes,ref_max_columes)
 compare_max_rows= max(max_rows,ref_max_rows)
 print("最大列：",compare_max_columns)
-print("最大行：",compare_max_columns)
+print("最大行：",compare_max_rows)
 
 
 diff_df=pd.DataFrame(columns=df.columns) #创建一个空表，记录元器件差异，列索引和读取的Excel一致
 diff_df['diff refenrence']=[] #插入新列，记录不同的元器件位号
 
-print("diff_df插入列后初值: ",diff_df)      
+# print("diff_df插入列后初值: ",diff_df)      
 
 ########################################################
 # 将两个 DataFrame 连接起来，并标记它们来自于哪个文件
@@ -110,7 +118,7 @@ ignore_columns = ['Item Number','file'] #去重复行时要忽略的列名
 ###########################################################
 #去掉重复的行，比较时忽略ignore_columns列表里的列
 df_diff = df_concat.drop_duplicates(subset=df_concat.columns.difference(ignore_columns), keep=False)
-print("df_diff \n",df_diff)
+# print("df_diff \n",df_diff)
 
 ######################################################
 # 根据某列数据相同的行将 DataFrame 拆分为不同的 DataFrame
@@ -157,14 +165,14 @@ for rows in range(0,max_rows,1):  #比较表的行循环
             #利用集合找出差异的位号，
             reference_diff_list = list(set(reference_num_list)-set(ref_reference_num_list)) # 利用集合找出列表reference_num_list中独有的元素
             # reference_diff_list =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
-            reference_diff_list= sorted(reference_diff_list) #排序，默认升序排序
-            print("reference_diff_list:\n",reference_diff_list)            
+            reference_diff_list= sorted(reference_diff_list,key=custom_sort_key) #排序，默认升序排序
+            # print("reference_diff_list:\n",reference_diff_list)            
             reference_num_diff =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
             diff_df.iloc[(diff_df.shape[0]-2),diff_df.shape[1]-2]=reference_num_diff #差异的位号写在倒数第2行
             reference_diff_list = list(set(ref_reference_num_list)-set(reference_num_list)) # 利用集合找出列表ref_reference_num_list中独有的元素
             # reference_diff_list =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
-            reference_diff_list= sorted(reference_diff_list) #排序，默认升序排序
-            print("reference_diff_list:\n",reference_diff_list)            
+            reference_diff_list= sorted(reference_diff_list,key=custom_sort_key) #排序，默认升序排序
+            # print("reference_diff_list:\n",reference_diff_list)            
             reference_num_diff =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
             diff_df.iloc[(diff_df.shape[0]-1),diff_df.shape[1]-2]=reference_num_diff #差异的位号写在本行，也就是最后一行                   
             search_result = True
@@ -179,7 +187,7 @@ for rows in range(0,max_rows,1):  #比较表的行循环
         diff_df=pd.concat([diff_df,empty_row.to_frame().T],axis=0,ignore_index=False)
 
  
-print("diff_df最终值\n",diff_df)
+# print("diff_df最终值\n",diff_df)
 compare_result=False
 ###############################################
 #以下用xlsxwriter设置Excel的格式和颜色
@@ -250,8 +258,7 @@ if compare_result==False:
 # 遍历 DataFrame，并检查空行，给上一行设置红色背景颜色
     for row_num in range(1, max_rows):
         if diff_df.iloc[row_num].isnull().all(axis=0):
-        # if pd.isnull(diff_df.iloc[row_num,REFERENCE_COLUMN]):
-           print("空行：\n",row_num)
+        #    print("空行：\n",row_num)
            worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_blanks','format': red_format})
 
 #   以下循序将Excel表格背景颜色隔行设置为灰色
