@@ -51,6 +51,8 @@ MANUFACTORY_COLUMN =7 #清单“厂家”所在列号
 COMMENT_COLUMN = 8 #清单“备注”注释所在列号
 MODEL_NUM_COLUMN = 8  #清单元器件型号所在的列号
 
+DIFF_REFENRENCE_COLUMN = 6
+
 REF_REFERENCE_COLUMN = 2   #参考清单元器件位号所在的列号
 REF_VALUE_COLUMN = 8   #参考清单元器件值所在的列号
 REF_FOOTPRINT_COLUMN = 9 #参考清单元器件封装所在的列号
@@ -110,7 +112,8 @@ diff_df=diff_df.astype('object')
 ###下面新增新列，要赋初值，这里是空字符串，这很关键，否则升级到Pandas2.2版本会报错： 
 # FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. 
 # Value 'R1111' has dtype incompatible with float64, please explicitly cast to a compatible dtype first.
-diff_df['diff refenrence']='' #插入新列，记录不同的元器件位号,并且要赋初值为空字符串，否则新版本dandas会报错
+diff_df['file']=''
+diff_df['diff refenrence']='' #添加新列，记录不同的元器件位号,并且要赋初值为空字符串，否则新版本dandas会报错
 ####################################################################
 
 
@@ -157,7 +160,7 @@ print("ref_max_rows\n",ref_max_rows)
 
 ###########################################################
 #以下比较2个差异表里的具体单元格差异，主要是元器件位号的差异
-empty_row = pd.Series([pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA], index=diff_df.columns) #空行，插入空行时使用
+empty_row = pd.Series([pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA, pd.NA], index=diff_df.columns) #空行，插入空行时使用
 for rows in range(0,max_rows,1):  #比较表的行循环
     search_result = False
     for ref_rows in range(0,ref_max_rows,1):  #被比较表的行循环
@@ -178,14 +181,14 @@ for rows in range(0,max_rows,1):  #比较表的行循环
             reference_diff_list= sorted(reference_diff_list,key=custom_sort_key) #排序，默认升序排序
             # print("reference_diff_list:\n",reference_diff_list)            
             reference_num_diff =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
-            diff_df.iloc[(diff_df.shape[0]-2),diff_df.shape[1]-2]=reference_num_diff #差异的位号写在倒数第2行
+            diff_df.iloc[(diff_df.shape[0]-2),DIFF_REFENRENCE_COLUMN]=reference_num_diff #差异的位号写在倒数第2行
             
             reference_diff_list = list(set(ref_reference_num_list)-set(reference_num_list)) # 利用集合找出列表ref_reference_num_list中独有的元素
             # reference_diff_list =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串
             reference_diff_list= sorted(reference_diff_list,key=custom_sort_key) #排序，默认升序排序
             # print("reference_diff_list:\n",reference_diff_list)            
             reference_num_diff =','.join(list(reference_diff_list)) #将列表转换成以逗号分隔的字符串            
-            diff_df.iloc[(diff_df.shape[0]-1),diff_df.shape[1]-2]=reference_num_diff #差异的位号写在本行，也就是最后一行 
+            diff_df.iloc[(diff_df.shape[0]-1),DIFF_REFENRENCE_COLUMN]=reference_num_diff #差异的位号写在本行，也就是最后一行 
                           
             search_result = True
             break
@@ -286,8 +289,8 @@ if compare_result==False:
     worksheet.set_column("C:C", 50,header_format2)
     worksheet.set_column("D:D", 30,header_format3)
     worksheet.set_column("E:E", 25,header_format4) 
-    worksheet.set_column("F:F", 25,header_format5)
-    worksheet.set_column("G:G", 25,header_format4)
+    worksheet.set_column("F:F", 20,header_format4)
+    worksheet.set_column("G:G", 25,header_format5)
 
     format_border = workbook.add_format({'border':5})   # 设置边框格式
     worksheet.conditional_format('A1:XFD1048576',{'type':'no_blanks', 'format': format_border}) #整个工作表，根据条件来设置格式
