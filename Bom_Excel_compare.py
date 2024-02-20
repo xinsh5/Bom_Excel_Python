@@ -6,6 +6,7 @@ import tkinter as tk
 from tkinter import filedialog
 import pandas as pd
 import re
+import os
 #####################################
 #此文件使用了xlsxwriter 库，这个库不引用pandas是自动引用了，但是安装时没有自动一起安装，需要手动安装
 # import xlsxwriter 此文件使用了
@@ -44,9 +45,10 @@ def compare_excel(file1, file2):
     # # 将差异转换为列表
     # for idx, row in diff_df.iterrows():
     #     differences.append(f"Row: {idx}, Column: {row.name}, File1: {row['self']}, File2: {row['other']}")
-
+    
     File_Name=file1
     Ref_File_Name =file2
+    directory = os.path.dirname(file1)
     current_time_struct = time.localtime()  #获取当前时间
     # 分别获取当前年、月、日、时、分、秒
     current_year = current_time_struct.tm_year
@@ -90,7 +92,9 @@ def compare_excel(file1, file2):
     # Ref_File_Name = "./Bom/hongyun导出清单_20240213.xlsx" #被比较的清单
     # File_Name='./Bom/hongyun导出清单_20240213.xlsx'  #要比较文件名
     # Ref_File_Name = "./Bom/hongyun导出清单_20240213_M.xlsx" #被比较的清单
-    New_File_Name='./Bom/hongyun_V01清单_compare.xlsx'  #输出的文件名
+    # New_File_Name='./Bom/hongyun_V01清单_compare.xlsx'  #输出的文件名
+    New_File_Name =os.path.splitext(file1)[0] + '_compare' + os.path.splitext(file1)[1]
+
 
     File_Log_Name = './Bom/BOM_Excel_pd_compare.log'  #记录的日志文件
     if record_file:
@@ -125,7 +129,6 @@ def compare_excel(file1, file2):
 
 
     diff_df=pd.DataFrame(columns=df.columns) #创建一个空表，记录元器件差异，列索引和读取的Excel一致
-    diff_df=diff_df.astype('object')
     ###################################################
     ###下面新增新列，要赋初值，这里是空字符串，这很关键，否则升级到Pandas2.2版本会报错： 
     # FutureWarning: Setting an item of incompatible dtype is deprecated and will raise an error in a future version of pandas. 
@@ -153,9 +156,15 @@ def compare_excel(file1, file2):
     if df_diff.empty:
         diff_df.to_excel(New_File_Name, sheet_name='Sheet1', index=False)
     else:
+        ignore_columns = ['Item Number','Quantity','Part Reference','file'] #重复行时要忽略的列名
+        df_diff_duplicates = df_diff[df_diff.duplicated(subset=df_diff.columns.difference(ignore_columns), keep=False)] #提取出型号重复行
+        print("重复的行",df_diff_duplicates)
+        df_diff_no_duplicates = df_diff.drop_duplicates(subset=df_diff.columns.difference(ignore_columns), keep=False) #提取出型号重复行
+        df_diff_no_duplicates = df_diff_no_duplicates.sort_values(by=['Value', 'PCB Footprint', 'Part Reference'])
+        print("不重复的行",df_diff_no_duplicates)
         ######################################################
         # 根据某列数据相同的行将 DataFrame 拆分为不同的 DataFrame
-        grouped = df_diff.groupby('file')
+        grouped = df_diff_duplicates.groupby('file')
         # 将每个分组存储为不同的 DataFrame
         grouped_dataframes = [group for _, group in grouped]
         # 打印每个分组的 DataFrame
@@ -184,7 +193,7 @@ def compare_excel(file1, file2):
         for rows in range(0,max_rows,1):  #比较表的行循环
             search_result = False
             for ref_rows in range(0,ref_max_rows,1):  #被比较表的行循环
-                #此循环查找Value和PCB Footprint里相同的行,由于删除了"item"列,因此列号需要减一
+                #此循环查找Value和PCB Footprint里相同的行,由于删除了"item"列
                 if df.iloc[rows,VALUE_COLUMN]== ref_df.iloc[ref_rows,VALUE_COLUMN] and \
                 df.iloc[rows,FOOTPRINT_COLUMN]== ref_df.iloc[ref_rows,FOOTPRINT_COLUMN] :
                     #如果型号相同，将本行数据保存到差异表里。注意需要to_frame()和.T转置，否则不是按行追加
@@ -221,17 +230,18 @@ def compare_excel(file1, file2):
                 # diff_df=pd.concat([diff_df,diff_df.columns.to_frame().T],axis=0,ignore_index=False)
                 diff_df=pd.concat([diff_df,empty_row.to_frame().T],axis=0,ignore_index=False)
 
+        diff_df_all = pd.concat([diff_df, df_diff_no_duplicates], ignore_index=True) 
         
         # print("diff_df最终值\n",diff_df)
         compare_result=False
         ###############################################
         #以下用xlsxwriter设置Excel的格式和颜色
         if compare_result==False:
-            max_rows = diff_df.shape[0]  #获取最大行数
-            max_columes = diff_df.shape[1]  #获取最大列数
+            max_rows = diff_df_all.shape[0]  #获取最大行数
+            max_columes = diff_df_all.shape[1]  #获取最大列数
             
             writer = pd.ExcelWriter(New_File_Name,engine='xlsxwriter') #使用ExcelWriter需要安装xlsxwriter模块：pip install xlsxwriter 
-            diff_df.to_excel(writer, sheet_name='Sheet1', index=False)
+            diff_df_all.to_excel(writer, sheet_name='Sheet1', index=False)
 
             workbook = writer.book
             worksheet = writer.sheets['Sheet1']
@@ -292,7 +302,7 @@ def compare_excel(file1, file2):
 
         # 遍历 DataFrame，并检查空行，给上一行设置红色背景颜色
             for row_num in range(1, max_rows):
-                if diff_df.iloc[row_num].isnull().all(axis=0):
+                if diff_df_all.iloc[row_num].isnull().all(axis=0):
                 #    print("空行：\n",row_num)
                     worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_blanks','format': red_format})
 
@@ -324,7 +334,7 @@ def compare_excel(file1, file2):
         file_log.write("End.")
         file_log.close()  #关闭日志文件
 
-    return diff_df
+    return diff_df_all
 
 def submit():
     file1 = entry_file1.get()
