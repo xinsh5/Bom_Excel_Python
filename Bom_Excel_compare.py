@@ -48,7 +48,7 @@ def compare_excel(file1, file2):
     
     File_Name=file1
     Ref_File_Name =file2
-    directory = os.path.dirname(file1)
+    # directory = os.path.dirname(file1)
     current_time_struct = time.localtime()  #获取当前时间
     # 分别获取当前年、月、日、时、分、秒
     current_year = current_time_struct.tm_year
@@ -325,7 +325,7 @@ def compare_excel(file1, file2):
             worksheet.conditional_format('A1:XFD1048576',{'type':'no_blanks', 'format': format_border}) #整个工作表，根据条件来设置格式
             # writer.save() #save()方法已经弃用？使用close()方法既是保存退出。
 
-            worksheet.freeze_panes(1,1)   # 冻结首行
+            worksheet.freeze_panes(1,0)   # 冻结首行，不冻结首列
             worksheet.autofilter(0,0,max_rows,(max_columes-1))   # 添加筛选
 
             writer.close()  #保存\退出
@@ -346,14 +346,17 @@ def submit():
         output_text.insert(tk.END, "No differences found.")
     else:
         output_text.insert(tk.END, "Differences found:\n")
-        for diff in differences:
-            output_text.insert(tk.END, f"{diff}\n")
+        # for diff in differences:
+        output_text.insert(tk.END, f"{differences}\n")
     
     output_text.insert(tk.END, "\n完成2个Excel文件的比较.\n")
-    output_text.insert(tk.END, f"\n比较结果存储在文件: {cmp_result_file} 里\n")       
+    output_text.insert(tk.END, f"\n比较结果存储在文件: {cmp_result_file} 里\n")  
+
+def Import():        
+    output_text.insert(tk.END, "\nImport按钮.\n")      
 
 root = tk.Tk()
-root.title("Excel File Comparator")
+root.title("比较2个Excel元器件清单的差异")
 
 # 设置行和列的权重以使其可以拉伸，但保持间距不变
 for i in range(4):
@@ -361,9 +364,9 @@ for i in range(4):
 root.grid_columnconfigure(1, weight=1)
 
 # 设置窗口初始大小为原来的两倍
-root.geometry("800x600")
+root.geometry("1024x600")
 
-label_file1 = tk.Label(root, text="File 1:")
+label_file1 = tk.Label(root, text="要比较的Excel清单:")
 label_file1.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 0))
 
 entry_file1 = tk.Entry(root)
@@ -372,7 +375,7 @@ entry_file1.grid(row=0, column=1, padx=10, pady=(10, 0), sticky="ew")
 browse_button1 = tk.Button(root, text="Browse", command=lambda: browse_file(entry_file1))
 browse_button1.grid(row=0, column=2, padx=10, pady=(10, 0))
 
-label_file2 = tk.Label(root, text="File 2:")
+label_file2 = tk.Label(root, text="被比较的Excel清单:")
 label_file2.grid(row=1, column=0, sticky="w", padx=10, pady=(0, 5))
 
 entry_file2 = tk.Entry(root)
@@ -381,8 +384,11 @@ entry_file2.grid(row=1, column=1, padx=10, pady=(0, 5), sticky="ew")
 browse_button2 = tk.Button(root, text="Browse", command=lambda: browse_file(entry_file2))
 browse_button2.grid(row=1, column=2, padx=10, pady=(0, 5))
 
-submit_button = tk.Button(root, text="Compare", command=submit)
+submit_button = tk.Button(root, text="开始比较", command=submit)
 submit_button.grid(row=2, column=1, padx=10, pady=5)
+
+# Import_button = tk.Button(root, text="Import", command=Import)
+# Import_button.grid(row=2, column=2, padx=10, pady=5)
 
 output_text = tk.Text(root, height=30, width=50)  # 增加了输出文本框的高度
 output_text.grid(row=3, columnspan=3, padx=10, pady=(0, 10), sticky="nsew")
