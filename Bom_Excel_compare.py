@@ -300,11 +300,10 @@ def compare_excel(file1, file2):
                 'font_color': '#FF0000',
             })
 
-        # 遍历 DataFrame，并检查空行，给上一行设置红色背景颜色
-            for row_num in range(1, max_rows):
-                if diff_df_all.iloc[row_num].isnull().all(axis=0):
-                #    print("空行：\n",row_num)
-                    worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_blanks','format': red_format})
+        
+            for row_num in range(diff_df.shape[0]+1, max_rows+1):
+                # 遍历2个表不同的行，给这些行的字体设置为红色               
+                worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_blanks','format': red_format})
 
         #   以下循序将Excel表格背景颜色隔行设置为灰色
             for row_num in range(0,max_rows+1,1):
@@ -334,14 +333,14 @@ def compare_excel(file1, file2):
         file_log.write("End.")
         file_log.close()  #关闭日志文件
 
-    return diff_df_all
+    return diff_df_all, New_File_Name
 
 def submit():
     file1 = entry_file1.get()
     file2 = entry_file2.get()
 
-    differences = compare_excel(file1, file2)
-
+    differences,cmp_result_file = compare_excel(file1, file2)
+    print(cmp_result_file)
     output_text.delete(1.0, tk.END)  # 清空文本框
     if differences.empty:
         output_text.insert(tk.END, "No differences found.")
@@ -350,7 +349,8 @@ def submit():
         for diff in differences:
             output_text.insert(tk.END, f"{diff}\n")
     
-        
+    output_text.insert(tk.END, "\n完成2个Excel文件的比较.\n")
+    output_text.insert(tk.END, f"\n比较结果存储在文件: {cmp_result_file} 里\n")       
 
 root = tk.Tk()
 root.title("Excel File Comparator")
@@ -361,7 +361,7 @@ for i in range(4):
 root.grid_columnconfigure(1, weight=1)
 
 # 设置窗口初始大小为原来的两倍
-root.geometry("800x400")
+root.geometry("800x600")
 
 label_file1 = tk.Label(root, text="File 1:")
 label_file1.grid(row=0, column=0, sticky="w", padx=10, pady=(10, 0))
@@ -384,7 +384,7 @@ browse_button2.grid(row=1, column=2, padx=10, pady=(0, 5))
 submit_button = tk.Button(root, text="Compare", command=submit)
 submit_button.grid(row=2, column=1, padx=10, pady=5)
 
-output_text = tk.Text(root, height=20, width=50)  # 增加了输出文本框的高度
+output_text = tk.Text(root, height=30, width=50)  # 增加了输出文本框的高度
 output_text.grid(row=3, columnspan=3, padx=10, pady=(0, 10), sticky="nsew")
 
 root.mainloop()
