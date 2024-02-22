@@ -157,17 +157,20 @@ def import_excel(file1, file2):
     VALUE_COLUMN = 3   #清单元器件值所在的列号
     FOOTPRINT_COLUMN = 4 #清单元器件封装所在的列号
     REVISED_VALUE_COLUMN =5 #清单新增修正后的元器件型号所在的列号
-    MANUFACTORY_PART_NUM_COLUMN =6 #清单制造商型号所在列号
-    MANUFACTORY_COLUMN =7 #清单“厂家”所在列号 
-    COMMENT_COLUMN = 8 #清单“备注”注释所在列号
-    MODEL_NUM_COLUMN = 8  #清单元器件型号所在的列号
+    PART_NAME = 6 #清单元器名称所在列号
+    MANUFACTORY_PART_NUM_COLUMN =7 #清单制造商型号所在列号
+    MANUFACTORY_COLUMN =8 #清单“厂家”所在列号 
+    COMMENT_COLUMN = 9 #清单“备注”注释所在列号
+    VENDOR_COLUMN = 10  #清单元器件供货方所在的列号，如：'客供','一博供货'等
 
     REF_REFERENCE_COLUMN = 2   #参考清单元器件位号所在的列号
+    REF_PART_NAME = 3 #清单元器名称所在列号
     REF_VALUE_COLUMN = 8   #参考清单元器件值所在的列号
     REF_FOOTPRINT_COLUMN = 9 #参考清单元器件封装所在的列号
     REF_REVISED_VALUE_COLUMN =10 #参考清单新增修正后的元器件型号所在的列号
     REF_MANUFACTORY_PART_NUM_COLUMN =4 #参考清单制造商型号所在列号
     REF_MANUFACTORY_COLUMN =6 #参考清单“厂家”所在列号 
+    REF_VENDOR_COLUMN = 33 #参考清单“物料提供方式”所在列号
 
     search_result = False
 
@@ -190,20 +193,29 @@ def import_excel(file1, file2):
     ref_max_columes = ref_df.shape[1]  #获取参考清单最大列数
 
     #插入新列，用于记录整理后的元器件型号
-    df.insert(REVISED_VALUE_COLUMN,'Revised Value','')
-    #插入新列，用于记录制造商的元器件型号
-    df.insert(MANUFACTORY_PART_NUM_COLUMN,'Manufactory Part Num','')
+    if 'Revised Value' not in df.columns : 
+        df.insert(REVISED_VALUE_COLUMN,'Revised Value','')
+    #插入新列，用于记录制造商的元器件名称
+    if '名称' not in df.columns:
+        df.insert(PART_NAME,'名称','')
+    if '型号' not in df.columns :     
+        df.insert(MANUFACTORY_PART_NUM_COLUMN,'型号','')
     #插入新列，用于记录厂家
-    df.insert(MANUFACTORY_COLUMN,'Manufactory','')
+    if '厂家' not in df.columns :     
+        df.insert(MANUFACTORY_COLUMN,'厂家','')
     #插入新列，用于记录备注信息
-    df.insert(COMMENT_COLUMN,'Comment','')
+    if 'Comment' not in df.columns :     
+        df.insert(COMMENT_COLUMN,'Comment','')
+    #插入新列，用于记录物料提供方式信息
+    if '物料提供方式' not in df.columns :     
+        df.insert(VENDOR_COLUMN,'物料提供方式','')
 
     max_rows = df.shape[0]  #获取最大行数
     max_columes = df.shape[1]  #获取最大列数
     #以下循环整理规范Value列里的型号，存放在新列Revised Value里
     for i in range(0,max_rows,1):
-        ref_result= df.iloc[i,2][0] #读取元器件位号首字母
-        NC_result= str(df.iloc[i,3])[-2:]  #读取元器件值的最后2位字母，用于判断是否为/NC
+        ref_result= df.iloc[i,REFERENCE_COLUMN][0] #读取元器件位号首字母
+        NC_result= str(df.iloc[i,VALUE_COLUMN])[-2:]  #读取元器件值的最后2位字母，用于判断是否为/NC
         if NC_result=='NC':
             # print(f"这些器件不焊接：{i}")
             df.iloc[i,REVISED_VALUE_COLUMN]=df.iloc[i,VALUE_COLUMN]  #NC器件的型号不变，保持后缀带NC
@@ -220,8 +232,12 @@ def import_excel(file1, file2):
             if (((df.iloc[rows,VALUE_COLUMN]==ref_df.iloc[ref_rows,REF_VALUE_COLUMN]) or \
                 (df.iloc[rows,REVISED_VALUE_COLUMN]==ref_df.iloc[ref_rows,REF_VALUE_COLUMN])) and \
                 (df.iloc[rows,FOOTPRINT_COLUMN]==ref_df.iloc[ref_rows,REF_FOOTPRINT_COLUMN])):
+                #将相同型号的物料导入表格
+                df.iloc[rows,PART_NAME]=ref_df.iloc[ref_rows,REF_PART_NAME]
                 df.iloc[rows,MANUFACTORY_PART_NUM_COLUMN]=ref_df.iloc[ref_rows,REF_MANUFACTORY_PART_NUM_COLUMN]
                 df.iloc[rows,MANUFACTORY_COLUMN]=ref_df.iloc[ref_rows,REF_MANUFACTORY_COLUMN]
+                df.iloc[rows,VENDOR_COLUMN]=ref_df.iloc[ref_rows,REF_VENDOR_COLUMN]
+              
                 search_result = True
         if search_result==False:
             df.iloc[rows,COMMENT_COLUMN]="没有相应的型号"
@@ -293,10 +309,14 @@ def import_excel(file1, file2):
     worksheet.set_column("A:A", 8, header_format) #设置A列宽度为10，格式为:垂直中信对齐；水平中心对齐
     worksheet.set_column("B:B", 8, header_format1)
     worksheet.set_column("C:C", 50,header_format2)
-    worksheet.set_column("D:D", 40,header_format3)
-    worksheet.set_column("E:I", 25,header_format4)
-    # worksheet.set_column("F:F", 30,header_format5)
-    # worksheet.set_column("G:G", 30,header_format5)
+    worksheet.set_column("D:D", 25,header_format2)
+    worksheet.set_column("E:E", 30,header_format4)
+    worksheet.set_column("F:F", 30,header_format5)
+    worksheet.set_column("G:G", 20,header_format5)
+    worksheet.set_column("H:H", 25,header_format5)
+    worksheet.set_column("I:I", 25,header_format5)
+    worksheet.set_column("J:J", 20,header_format5)
+    worksheet.set_column("K:K", 20,header_format5)
     # worksheet.set_default_row(30)# 设置所有行高
     # worksheet.set_row(0,15,header_format)#设置指定行
 
@@ -315,7 +335,7 @@ def browse_file(entry):
     entry.insert(0, filename)
 
 def Import():        
-    output_text.insert(tk.END, "\nImport按钮.\n") 
+    output_text.insert(tk.END, "\n开始导入......\n") 
     file1 = entry_file1.get()
     file2 = entry_file2.get()
     cmp_result_file = import_excel(file1, file2)
