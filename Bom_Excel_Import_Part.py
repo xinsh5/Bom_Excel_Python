@@ -164,13 +164,15 @@ def import_excel(file1, file2):
     VENDOR_COLUMN = 10  #清单元器件供货方所在的列号，如：'客供','一博供货'等
 
     REF_REFERENCE_COLUMN = 2   #参考清单元器件位号所在的列号
-    REF_PART_NAME = 3 #清单元器名称所在列号
-    REF_VALUE_COLUMN = 8   #参考清单元器件值所在的列号
-    REF_FOOTPRINT_COLUMN = 9 #参考清单元器件封装所在的列号
-    REF_REVISED_VALUE_COLUMN =10 #参考清单新增修正后的元器件型号所在的列号
-    REF_MANUFACTORY_PART_NUM_COLUMN =4 #参考清单制造商型号所在列号
-    REF_MANUFACTORY_COLUMN =6 #参考清单“厂家”所在列号 
-    REF_VENDOR_COLUMN = 33 #参考清单“物料提供方式”所在列号
+    REF_PART_NAME = 6 #清单元器名称所在列号
+    REF_VALUE_COLUMN = 3   #参考清单元器件值所在的列号
+    REF_FOOTPRINT_COLUMN = 4 #参考清单元器件封装所在的列号
+    REF_REVISED_VALUE_COLUMN =5 #参考清单新增修正后的元器件型号所在的列号
+    REF_MANUFACTORY_PART_NUM_COLUMN =30 #参考清单制造商型号所在列号
+    REF_CUSTOMER_MANUFACTORY_PART_NUM_COLUMN =7 #参考清单制造商型号所在列号
+    REF_MANUFACTORY_COLUMN =29 #参考清单“厂家”所在列号 
+    REF_CUSTOMER_MANUFACTORY_COLUMN =8 #参考清单“厂家”所在列号 
+    REF_VENDOR_COLUMN = 34 #参考清单“物料提供方式”所在列号
 
     search_result = False
 
@@ -230,14 +232,20 @@ def import_excel(file1, file2):
         search_result = False
         for ref_rows in range(0,ref_max_rows,1):
             if (((df.iloc[rows,VALUE_COLUMN]==ref_df.iloc[ref_rows,REF_VALUE_COLUMN]) or \
-                (df.iloc[rows,REVISED_VALUE_COLUMN]==ref_df.iloc[ref_rows,REF_VALUE_COLUMN])) and \
+                (df.iloc[rows,REVISED_VALUE_COLUMN]==ref_df.iloc[ref_rows,REF_REVISED_VALUE_COLUMN])) and \
                 (df.iloc[rows,FOOTPRINT_COLUMN]==ref_df.iloc[ref_rows,REF_FOOTPRINT_COLUMN])):
                 #将相同型号的物料导入表格
-                df.iloc[rows,PART_NAME]=ref_df.iloc[ref_rows,REF_PART_NAME]
-                df.iloc[rows,MANUFACTORY_PART_NUM_COLUMN]=ref_df.iloc[ref_rows,REF_MANUFACTORY_PART_NUM_COLUMN]
-                df.iloc[rows,MANUFACTORY_COLUMN]=ref_df.iloc[ref_rows,REF_MANUFACTORY_COLUMN]
-                df.iloc[rows,VENDOR_COLUMN]=ref_df.iloc[ref_rows,REF_VENDOR_COLUMN]
-              
+                if ref_df.iloc[ref_rows,REF_VENDOR_COLUMN] == "一博" :                   
+                    df.iloc[rows,PART_NAME]=ref_df.iloc[ref_rows,REF_PART_NAME]
+                    df.iloc[rows,MANUFACTORY_PART_NUM_COLUMN]=ref_df.iloc[ref_rows,REF_MANUFACTORY_PART_NUM_COLUMN]
+                    df.iloc[rows,MANUFACTORY_COLUMN]=ref_df.iloc[ref_rows,REF_MANUFACTORY_COLUMN]
+                    df.iloc[rows,VENDOR_COLUMN]=ref_df.iloc[ref_rows,REF_VENDOR_COLUMN]
+                else:
+                    df.iloc[rows,PART_NAME]=ref_df.iloc[ref_rows,REF_PART_NAME]
+                    df.iloc[rows,MANUFACTORY_PART_NUM_COLUMN]=ref_df.iloc[ref_rows,REF_CUSTOMER_MANUFACTORY_PART_NUM_COLUMN]
+                    df.iloc[rows,MANUFACTORY_COLUMN]=ref_df.iloc[ref_rows,REF_CUSTOMER_MANUFACTORY_COLUMN]
+                    df.iloc[rows,VENDOR_COLUMN]=ref_df.iloc[ref_rows,REF_VENDOR_COLUMN]
+
                 search_result = True
         if search_result==False:
             df.iloc[rows,COMMENT_COLUMN]="没有相应的型号"
