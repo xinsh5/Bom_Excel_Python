@@ -182,19 +182,34 @@ def import_excel(file1):
     first_loop_end_flag = False
 
     File_Name=file1
-    # Ref_File_Name =file2
     New_File_Name =os.path.splitext(file1)[0] + '_Merge' + os.path.splitext(file1)[1]
-    # File_Name='./Bom/hongyun导出清单_20240212.xlsx'  #原始文件名,
-    # New_File_Name='./Bom/hongyun_V01清单_value.xlsx'  #输出的文件名
-    # Ref_File_Name = "./Bom/2100215381-料况-天路元器件件清单_焊接20231211.xlsx" #参考清单，用于读取制造商型号
-
+    File_Log_Name = os.path.splitext(file1)[0] + '_Merge' + '.log'  #记录的日志文件
+    file_log = open(File_Log_Name,'w')  #打开记录文件
+    file_log.write("时间："+f"{current_year}"+"年"+ f"{current_month}"+"月"+f"{current_day}"+"日"
+                    +f"{current_hour}"+"时"+f"{current_minute}"+"分"+f"{current_second}"+"秒"+"\n")
+    file_log.write("读出的文件："+File_Name+"\n")
+    file_log.write("写入的文件："+New_File_Name+"\n")
+   
     df = pd.read_excel(File_Name)
+
 # df.reset_index()
 
     max_rows = df.shape[0]  #获取最大行数
-    max_columes = df.shape[1]  #获取最大列数  
+    max_columes = df.shape[1]  #获取最大列数
+    print(f"原始最大行数：{max_rows}")
+    file_log.write(f"原始最大行数：{max_rows}"+"\n")
+    print(f"原始最大列数：{max_columes}")
+    file_log.write(f"原始最大列数：{max_columes}"+"\n")  
     
-    # dup=df.duplicated("客户型号",keep=False)    
+    # dup=df.duplicated("客户型号",keep=False)
+    dup=df.duplicated("型号",keep=False)
+    print("重复数据：\n",df[dup])
+    print("重复的行：\n",dup)
+    # print("重复的行号：\n",dup)
+    # file_log.write("重复的数据：\n")
+    # file_log.write(str(df[dup]) + "\n")
+    file_log.write("型号重复的行号：\n")
+    file_log.write(str(dup) + "\n")   
   
     # for i in range(initial_line_num,max_rows,1):
     i=INITIAL_LINE_NUM 
@@ -210,8 +225,8 @@ def import_excel(file1):
         while j<max_rows :
             if pd.isnull(df.iloc[j,MODEL_NUM_COLUMN]):  #如果型号单元格为空则跳过
                 if first_loop_end_flag == False:
-                    print(f"第{j}行没有型号")
-                   
+                    print(f"第{j}行没有型号")                   
+                    file_log.write(f"单元格：{i},{j} 没有型号"+"\n")
             elif df.iloc[i,MODEL_NUM_COLUMN] == df.iloc[j,MODEL_NUM_COLUMN]:  #如果型号相同则合并相同的行
                     reference_num_list=reference_num_list+','+ df.iloc[j,REFERENCE_COLUMN]  #合并位号单元格内容
                     part_count = part_count + df.iloc[j,QUANTITY_COLUMN]  #元器件数量相加
@@ -225,10 +240,10 @@ def import_excel(file1):
             j+=1        
         if(repetition_flag):
             print(f"重复单元格的内容:{reference_num_list}")
-           
+            file_log.write(f"重复单元格的内容:\n{reference_num_list}"+"\n")
             reference_num_list=sorted(reference_num_list.split(','),key=compare_func)  #排序，默认升序排序
             print(f"合并单元格并排序完的内容:{reference_num_list}")
-           
+            file_log.write(f"合并单元格并排序完的内容:\n{reference_num_list}"+"\n")
             reference_num_list=','.join(reference_num_list)  #将列表转换成以逗号分隔的字符串
             df.iloc[i,REFERENCE_COLUMN]=reference_num_list
             df.iloc[i,QUANTITY_COLUMN]=part_count
@@ -330,8 +345,10 @@ def import_excel(file1):
 
     worksheet.freeze_panes(1,0)   # 冻结首行，不冻结首列
     worksheet.autofilter(0,0,max_rows,(max_columes-1))   # 添加筛选
-
+    
     writer.close()  #保存\退出
+    file_log.write("End.")
+    file_log.close()  #关闭日志文件
     return New_File_Name
 def browse_file(entry):
     filename = filedialog.askopenfilename()
