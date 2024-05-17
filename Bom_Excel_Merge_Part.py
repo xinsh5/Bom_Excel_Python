@@ -190,16 +190,21 @@ def import_excel(file1):
     file_log.write("读出的文件："+File_Name+"\n")
     file_log.write("写入的文件："+New_File_Name+"\n")
    
-    df = pd.read_excel(File_Name)
+    df = pd.read_excel(File_Name)    
+    
+
 
 # df.reset_index()
 
     max_rows = df.shape[0]  #获取最大行数
     max_columes = df.shape[1]  #获取最大列数
+     #插入新列，用于记录原始行索引号
+    df.insert(max_columes,'原始行号',df.index)
     print(f"原始最大行数：{max_rows}")
     file_log.write(f"原始最大行数：{max_rows}"+"\n")
     print(f"原始最大列数：{max_columes}")
-    file_log.write(f"原始最大列数：{max_columes}"+"\n")  
+    file_log.write(f"原始最大列数：{max_columes}"+"\n") 
+    max_columes = df.shape[1]  #获取最大列数 
     
     # dup=df.duplicated("客户型号",keep=False)
     dup=df.duplicated("型号",keep=False)
@@ -213,6 +218,8 @@ def import_excel(file1):
   
     # for i in range(initial_line_num,max_rows,1):
     i=INITIAL_LINE_NUM 
+    # drop_rows = 0 #删除的行数；为了记录时和原始文档的行数保持一致
+    # origin_rows_num = INITIAL_LINE_NUM #原始行号
     while i<max_rows :
         repetition_flag = False  #重复标志
         if i > INITIAL_LINE_NUM:
@@ -222,23 +229,29 @@ def import_excel(file1):
         reference_num_list = df.iloc[i,REFERENCE_COLUMN]
         # for j in range(i+1,max_rows,1):
         j=i+1
+        # origin_rows_num = i + drop_rows
         while j<max_rows :
+            drop_row_flag = False
             if pd.isnull(df.iloc[j,MODEL_NUM_COLUMN]):  #如果型号单元格为空则跳过
                 if first_loop_end_flag == False:
-                    print(f"第{j}行没有型号")                   
-                    file_log.write(f"单元格：{i},{j} 没有型号"+"\n")
+                    print(f"第{df.iloc[j,max_columes-1]}行没有型号")                   
+                    file_log.write(f"单元格：{df.iloc[j,max_columes-1]} 没有型号"+"\n")
             elif df.iloc[i,MODEL_NUM_COLUMN] == df.iloc[j,MODEL_NUM_COLUMN]:  #如果型号相同则合并相同的行
                     reference_num_list=reference_num_list+','+ df.iloc[j,REFERENCE_COLUMN]  #合并位号单元格内容
                     part_count = part_count + df.iloc[j,QUANTITY_COLUMN]  #元器件数量相加
+                    print(f"重复的行号:{df.iloc[i,max_columes-1]+1},{df.iloc[j,max_columes-1]+1}") #索引默认从0开始，因此需要加1
+                    print(f"max_rows:{max_rows}")
+                    file_log.write(f"重复的行号:{df.iloc[i,max_columes-1]+1},{df.iloc[j,max_columes-1]+1}"+"\n")#索引默认从0开始，因此需要加1
                     df.drop(index=j,axis=0,inplace=True)  #删除后面相同的行,并且重排索引
                     df.reset_index(drop=True,inplace=True)  #重排索引并更新
-                    max_rows -= 1  #更新最大行数
-                    print(f"重复的行号:{i},{j}")
-                    print(f"max_rows:{max_rows}")
-                  
+                    max_rows -= 1  #更新最大行数                    
+                    
+                    # drop_rows += 1  #删除的总行数加1
+                    drop_row_flag = True
                     repetition_flag = True
-            j+=1        
-        if(repetition_flag):
+            if not drop_row_flag: #如果没删除行则查询行号加1，因为删除行后后面的行自动前移
+                j+=1        
+        if(repetition_flag): #对重复的单元格进行合并
             print(f"重复单元格的内容:{reference_num_list}")
             file_log.write(f"重复单元格的内容:\n{reference_num_list}"+"\n")
             reference_num_list=sorted(reference_num_list.split(','),key=compare_func)  #排序，默认升序排序
