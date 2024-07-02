@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # !encoding:utf-8
-
+# 这个程序按照Bom清单第7列的型号合并型号相同的行，重新计算数量，合并位号；
 #  注意：pandas使用的是Dataframe结构，行、列索引从0开始，和Excel索引值不同！！！！
 
 import time
