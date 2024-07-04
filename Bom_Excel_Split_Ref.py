@@ -90,22 +90,7 @@ def convert_to_range_list(nums):
 def format_ranges(ranges,prefix):
     return ', '.join([f"{prefix}{start}~{prefix}{end}" if start != end else f"{prefix}{start}" for start, end in ranges])
 
-# def format_ranges(ranges, prefix):
-#     result = []
-#     for item in ranges:
-#         if isinstance(item, tuple):
-#             start, end = item
-#             result.append(f"{prefix}{start}~{prefix}{end}")
-#         else:
-#             result.append(f"{prefix}{item}")
-#     return result
 
- 
-
-# def add_prefix_to_ranges(range_list, prefix):
-#     # 使用列表解析在每个范围字符串前面添加特定字母
-#     prefixed_list = [f"{prefix}{range_str}" for range_str in range_list]
-#     return prefixed_list
 def add_prefix_to_ranges_and_single_numbers(range_list, prefix):
     prefixed_list = []
     for item in range_list:
@@ -234,15 +219,6 @@ def import_excel(file1):
    
     df = pd.read_excel(File_Name)  
 
-    # 指定列的数据类型
-    # dtype_dict = {
-    #     '序号': int,
-    #     '项目代号':str,
-    #     '代号': str,
-    #     '名称和型号':str,
-    #     '数量':int,
-    #     '备注':str
-    # }  
     
     processed_df = pd.DataFrame({}) #columns=['序号','项目代号','代号','名称和型号','数量','备注'],dtype=dtype_dict)
     # processed_df = pd.DataFrame(columns=['序号','项目代号','代号','名称和型号','数量','备注'])
@@ -284,11 +260,8 @@ def import_excel(file1):
         for group, quantity in reference_num_list_num: 
                                    
             processed_df.loc[len(processed_df)]=new_row
-            # processed_df = pd.concat([processed_df, new_row], ignore_index=True)
-                                   
-            # processed_df = pd.concat([processed_df, pd.DataFrame({'序号':{i},'项目代号':group,'代号':df.iloc[i,REF_STANDARD_COLUMN],\
-            #                      '名称和型号':df.iloc[i,REF_MODEL_COLUMN],'数量':{quantity},'备注':df.iloc[i,REF_CUSTOMER_MANUFACTORY_COLUMN]})], ignore_index=True)
-            processed_df.iloc[current_row,0]=i
+           
+            processed_df.iloc[current_row,0]=i+1 #序号从1开始
             processed_df.iloc[current_row,1]=group
             if pd.isnull(df.iloc[i,REF_MODEL_COLUMN]):
                 processed_df.iloc[current_row,2]=0
@@ -363,12 +336,12 @@ def import_excel(file1):
     })
 
     #   以下循序将Excel表格背景颜色隔行设置为灰色
-    for row_num in range(0,max_rows+1,1):
-        if row_num % 2 == 0:
-            # worksheet.set_row(i,None,row_even_format)
-            worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_errors','format': gray_format})
-        else:
-            worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_errors','format': while_format})
+    # for row_num in range(0,max_rows+1,1):
+    #     if row_num % 2 == 0:
+    #         # worksheet.set_row(i,None,row_even_format)
+    #         worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_errors','format': gray_format})
+    #     else:
+    #         worksheet.conditional_format(row_num,0,row_num,(max_columes-1), {'type':'no_errors','format': while_format})
 
     # worksheet.conditional_format(0,0,0,0, {'type':'no_errors','format': gray_format})
     worksheet.set_column("A:A", 8, header_format) #设置A列宽度为10，格式为:垂直中信对齐；水平中心对齐
@@ -402,15 +375,15 @@ def browse_file(entry):
     entry.insert(0, filename)
 
 def Import():        
-    output_text.insert(tk.END, "\n开始合并......\n") 
+    output_text.insert(tk.END, "\n开始分割......\n") 
     file1 = entry_file1.get()
     # file2 = entry_file2.get()
     cmp_result_file = import_excel(file1)
-    output_text.insert(tk.END, "\n相同型号元器件已经导入到新清单:\n")
+    output_text.insert(tk.END, "\n分割位号后的清单已经导入到新模版清单:\n")
     output_text.insert(tk.END, f"{cmp_result_file}\n") 
 
 root = tk.Tk()
-root.title("转换位号格式到新清单")
+root.title("分割位号到元件表模版清单里")
 
 # 设置行和列的权重以使其可以拉伸，但保持间距不变
 for i in range(4):
@@ -441,7 +414,7 @@ browse_button1.grid(row=0, column=2, padx=10, pady=(10, 0))
 # submit_button = tk.Button(root, text="Compare", command=submit)
 # submit_button.grid(row=2, column=1, padx=10, pady=5)
 
-Import_button = tk.Button(root, text="转换位号格式", command=Import)
+Import_button = tk.Button(root, text="分割位号", command=Import)
 Import_button.grid(row=2, column=1, padx=15, pady=5)
 
 output_text = tk.Text(root, height=30, width=50)  # 增加了输出文本框的高度
